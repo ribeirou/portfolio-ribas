@@ -212,6 +212,18 @@ function init() {
   const zoomX = () => -HALF_W - 0.1 + Math.max(1.55, 0.78 / (tanV * camera.aspect));
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+
+  // Sem aceleração de hardware o Chrome cai no SwiftShader (render por
+  // software) e a cena engasga — detectamos isso pra já começar leve.
+  let softwareGPU = false;
+  try {
+    const gl = renderer.getContext();
+    const info = gl.getExtension("WEBGL_debug_renderer_info");
+    const name = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "";
+    softwareGPU = /swiftshader|llvmpipe|software|basic render|microsoft basic/i.test(name);
+    if (name) console.info(`[portfolio] GPU: ${name}${softwareGPU ? " (software — modo leve)" : ""}`);
+  } catch (e) { /* extensão indisponível: seguimos no padrão */ }
+
   const maxDpr = innerWidth < 800 ? 1.5 : 2;
   renderer.setPixelRatio(Math.min(devicePixelRatio, maxDpr));
   renderer.setSize(innerWidth, innerHeight);
@@ -230,6 +242,37 @@ function init() {
   composer.addPass(new OutputPass());
   const cinematicPass = new ShaderPass(CinematicShader);
   composer.addPass(cinematicPass);
+
+  /* --- qualidade adaptativa ---
+     Nível 2 = completo · 1 = sem bloom/sombra · 0 = mínimo.
+     Cai sozinho quando o FPS não sustenta; `?quality=low|high` força. */
+  const qualityParam = new URLSearchParams(location.search).get("quality");
+  let quality = qualityParam === "low" ? 0 : qualityParam === "high" ? 2 : (softwareGPU ? 0 : 2);
+
+  function applyQuality() {
+    bloomPass.enabled = quality >= 2;
+    cinematicPass.enabled = quality >= 1;
+
+    const wantShadow = quality >= 2;
+    if (renderer.shadowMap.enabled !== wantShadow) {
+      renderer.shadowMap.enabled = wantShadow;
+      keySpot.castShadow = wantShadow;
+      scene.traverse((o) => { if (o.material) o.material.needsUpdate = true; });
+    }
+    if (dust) dust.visible = quality >= 2;
+
+    const dprCap = quality >= 2 ? maxDpr : quality === 1 ? 1 : 0.75;
+    renderer.setPixelRatio(Math.min(devicePixelRatio, dprCap));
+    renderer.setSize(innerWidth, innerHeight);
+    composer.setSize(innerWidth, innerHeight);
+  }
+
+  function downgrade() {
+    if (quality === 0 || qualityParam) return;
+    quality -= 1;
+    applyQuality();
+    console.info(`[portfolio] FPS baixo — qualidade reduzida para nível ${quality}`);
+  }
 
   /* --- ambiente HDRI --- */
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -723,9 +766,29 @@ function init() {
 
   /* ---------------- loop ---------------- */
   const clock = new THREE.Clock();
+  applyQuality();
+
+  let fpsFrames = 0;
+  let fpsWindowStart = performance.now();
+  let slowWindows = 0;
+
+  function watchPerformance(now) {
+    fpsFrames++;
+    if (now - fpsWindowStart < 2000) return;
+    const fps = (fpsFrames * 1000) / (now - fpsWindowStart);
+    fpsFrames = 0;
+    fpsWindowStart = now;
+    if (fps < 38) {
+      slowWindows++;
+      if (slowWindows >= 2) { slowWindows = 0; downgrade(); }
+    } else {
+      slowWindows = 0;
+    }
+  }
 
   function frame() {
     requestAnimationFrame(frame);
+    watchPerformance(performance.now());
     const dt = Math.min(clock.getDelta(), 0.05);
     const t = clock.getElapsedTime();
 
@@ -814,8 +877,7 @@ function init() {
 
   addEventListener("resize", () => {
     tanV = fitCamera();
-    renderer.setSize(innerWidth, innerHeight);
-    composer.setSize(innerWidth, innerHeight);
+    applyQuality();
     bloomPass.setSize(innerWidth, innerHeight);
   });
 }

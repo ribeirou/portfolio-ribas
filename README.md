@@ -33,8 +33,13 @@ Para adicionar ou editar um projeto, mexa apenas em `sections.js`.
 
 - `?motion=full` — força a experiência com todas as animações
 - `?motion=reduce` — força o modo sem animação
+- `?quality=low` — modo leve: sem bloom, sombra, grão nem poeira
+- `?quality=high` — força a qualidade máxima
 
-Sem parâmetro, respeita o `prefers-reduced-motion` do sistema.
+Sem parâmetro, o movimento respeita o `prefers-reduced-motion` do sistema e a
+qualidade se ajusta sozinha: começa no mínimo se detectar renderização por
+software (aceleração de hardware desligada) e cai de nível se o FPS não
+sustentar.
 
 ## Créditos
 
