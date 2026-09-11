@@ -176,6 +176,7 @@ function init() {
   };
   manager.onLoad = () => {
     loaderFill.style.width = "100%";
+    warmUp();
     setTimeout(() => {
       loaderEl.classList.add("is-done");
       if (REDUCED) return;
@@ -398,19 +399,25 @@ function init() {
     scene.add(b);
   }
 
-  /* --- luminárias de teto --- */
-  const ceilingLights = [];
+  /* --- luminárias de teto ---
+     As luminárias (geometria) existem todas; as PointLights são apenas 3 e
+     saltam para as três mais próximas. Contagem fixa de luzes evita que o
+     three recompile os shaders quando uma luz entra/sai de cena. */
+  const lampSpots = [];
   const lampGeo = new THREE.BoxGeometry(0.5, 0.04, 0.5);
   const lampMat = new THREE.MeshBasicMaterial({ color: 0xffd7a8, toneMapped: false });
   for (let z = 2; z > CORR_END; z -= SPACING) {
     const lamp = new THREE.Mesh(lampGeo, lampMat);
     lamp.position.set(0, CEIL_Y - 0.03, z);
     scene.add(lamp);
-    const light = new THREE.PointLight(0xffb173, 5.5, 10, 2);
-    light.position.set(0, CEIL_Y - 0.25, z);
-    scene.add(light);
-    ceilingLights.push(light);
+    lampSpots.push(z);
   }
+  const ceilingLights = [0, 1, 2].map(() => {
+    const l = new THREE.PointLight(0xffb173, 5.5, 10, 2);
+    l.position.set(0, CEIL_Y - 0.25, 0);
+    scene.add(l);
+    return l;
+  });
 
   const ambient = new THREE.AmbientLight(0x1e262b, 0.55);
   scene.add(ambient);
@@ -764,6 +771,32 @@ function init() {
     else if (mode === "zoom") { if (hit) openDoor(); else exitZoom(); }
   });
 
+  /* ---------------- aquecimento ----------------
+     O three compila shader e envia textura pra GPU na primeira vez que cada
+     objeto aparece — o que causava um engasgo de ~200ms na primeira caminhada
+     pelo corredor. Aqui pagamos esse custo durante a tela de carregamento,
+     renderizando uma vez de cada porta. */
+  function warmUp() {
+    const pos = camera.position.clone();
+    const quat = camera.quaternion.clone();
+    try {
+      renderer.compile(scene, camera);
+      doors.forEach((d) => {
+        camera.position.set(IDLE_X, EYE_Y, d.z);
+        camera.lookAt(-HALF_W - 0.15, 1.15, d.z);
+        keySpot.position.set(0.9, 2.95, d.z + 1.5);
+        keySpot.target.position.set(-HALF_W - 0.2, 1.2, d.z);
+        keySpot.target.updateMatrixWorld();
+        keySpot.shadow.needsUpdate = true;
+        composer.render();
+      });
+    } catch (e) {
+      console.warn("[portfolio] aquecimento falhou (seguindo normalmente):", e);
+    }
+    camera.position.copy(pos);
+    camera.quaternion.copy(quat);
+  }
+
   /* ---------------- loop ---------------- */
   const clock = new THREE.Clock();
   applyQuality();
@@ -771,6 +804,8 @@ function init() {
   let fpsFrames = 0;
   let fpsWindowStart = performance.now();
   let slowWindows = 0;
+  const nearestLamps = [];
+  let lastShadowDoor = -1;
 
   function watchPerformance(now) {
     fpsFrames++;
@@ -839,8 +874,19 @@ function init() {
     keySpot.target.updateMatrixWorld();
     fillLight.position.set(-HALF_W + 1.5, 1.7, d.z + 0.9);
 
-    // só mantém acesas as luminárias por perto
-    ceilingLights.forEach((l) => { l.visible = Math.abs(l.position.z - camera.position.z) < 15; });
+    // shadow map só é redesenhado quando a cena realmente muda (troca de
+    // porta ou porta em movimento), não a cada frame do corredor
+    keySpot.shadow.autoUpdate = false;
+    if (active !== lastShadowDoor || mode !== "corridor") {
+      keySpot.shadow.needsUpdate = true;
+      lastShadowDoor = active;
+    }
+
+    // as 3 luzes saltam para as luminárias mais próximas da câmera
+    nearestLamps.length = 0;
+    for (const z of lampSpots) nearestLamps.push(z);
+    nearestLamps.sort((a, b) => Math.abs(a - camera.position.z) - Math.abs(b - camera.position.z));
+    ceilingLights.forEach((l, i) => { l.position.z = nearestLamps[i] ?? nearestLamps[0]; });
 
     // poeira flutuando ao redor da câmera
     if (dust) {
