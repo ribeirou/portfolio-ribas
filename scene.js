@@ -5,7 +5,7 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { SECTIONS, PROJECT_SCREENS } from "./sections.js?v=202609111130";
+import { SECTIONS, PROJECT_SCREENS } from "./sections.js?v=202609111136";
 
 // `?motion=full` força a experiência completa mesmo em ambientes que
 // reportam prefers-reduced-motion (headless, VM, preview); `?motion=reduce`
@@ -123,19 +123,22 @@ function buildProjectsHTML() {
   // Projeto sem link publicado não ganha uma tela preta vazia: vira um card
   // de texto com status, que fica honesto sem parecer quebrado.
   const cards = PROJECT_SCREENS.map((p) => `
-    <article class="project-card${p.url ? "" : " is-wip"}">
+    <article class="project-card${p.url ? "" : " is-text"}">
       ${p.url
         ? `<div class="project-screen"><iframe src="${p.url}" loading="lazy" title="${p.title}"></iframe></div>`
-        : `<p class="project-status">em desenvolvimento</p>`}
+        : (p.status ? `<p class="project-status">${p.status}</p>` : "")}
       <h3>${p.title}</h3>
       <p>${p.description}</p>
+      ${p.highlights ? `<ul class="project-highlights">${p.highlights.map((h) => `<li>${h}</li>`).join("")}</ul>` : ""}
       <ul class="stack-list">${p.stack.map((s) => `<li>${s}</li>`).join("")}</ul>
       <div class="project-links">
         ${p.url ? `<a href="${p.url}" target="_blank" rel="noopener noreferrer">abrir projeto ↗</a>` : ""}
+        ${p.repoUrl ? `<a href="${p.repoUrl}" target="_blank" rel="noopener noreferrer">ver código ↗</a>` : ""}
       </div>
     </article>
   `).join("");
-  return `<h2>Projetos</h2><div class="projects-grid">${cards}</div>`;
+  const single = PROJECT_SCREENS.length === 1 ? " is-single" : "";
+  return `<h2>Projetos</h2><div class="projects-grid${single}">${cards}</div>`;
 }
 
 /* ---------------- shader cinematográfico (vinheta + grão + aberração) ---------------- */

@@ -71,20 +71,27 @@ export const SECTIONS = [
   },
 ];
 
-// Monitores dentro do painel "Projetos" — cada um roda o site real ao vivo
-// num iframe normal (2D, dentro do painel — sem 3D envolvido aqui).
+// Cards do painel "Projetos".
+//   url        → se preenchido, o card mostra o site rodando ao vivo num iframe
+//   status     → rótulo curto no lugar do preview, quando não há url
+//   highlights → bullets técnicos (use quando o projeto for o destaque)
+//   repoUrl    → link para o código
 export const PROJECT_SCREENS = [
   {
-    title: "Contagem Regressiva — Show Luan Santana",
+    title: "Este portfólio",
+    status: "você está dentro dele agora",
     description:
-      "Setlist com links do Spotify, easter egg de constelação, instalável como PWA.",
-    stack: ["HTML", "CSS", "JavaScript", "GSAP", "Lenis", "tsParticles", "PWA"],
-    url: "https://luan-countdownv2.vercel.app",
-  },
-  {
-    title: "Página Romântica — Fita Cassete / Spotify",
-    description: "Identidade visual de fita cassete inspirada no Spotify, presente pessoal.",
-    stack: ["HTML", "CSS", "JavaScript"],
+      "Um corredor 3D percorrido pelo scroll: cada porta é uma seção. Um clique aproxima, o segundo abre a porta e revela o conteúdo. Feito sem framework e sem etapa de build — só módulos ES carregados direto no navegador.",
+    highlights: [
+      "Corredor e portas modelados em código, com materiais PBR (mapas de cor, normal e rugosidade) e iluminação baseada em HDRI",
+      "Pós-processamento próprio: bloom, tone mapping ACES, vinheta, grão e aberração cromática",
+      "Câmera cinematográfica guiada pelo scroll, com giro suave em direção à porta e enquadramento adaptativo por proporção de tela",
+      "Qualidade adaptativa: detecta renderização por software e reduz efeitos sozinha quando o FPS não sustenta",
+      "Engasgo de 200ms na primeira caminhada resolvido pré-compilando shaders durante o carregamento",
+      "Acessibilidade: respeita prefers-reduced-motion e cai para uma versão 2D quando não há WebGL",
+    ],
+    stack: ["Three.js", "WebGL", "GSAP", "Lenis", "JavaScript", "CSS"],
     url: null,
+    repoUrl: "https://github.com/ribeirou/portfolio-ribas",
   },
 ];
