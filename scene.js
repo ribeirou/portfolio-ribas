@@ -5,7 +5,7 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { SECTIONS, PROJECT_SCREENS } from "./sections.js?v=202609110143";
+import { SECTIONS, PROJECT_SCREENS } from "./sections.js?v=202609111130";
 
 // `?motion=full` força a experiência completa mesmo em ambientes que
 // reportam prefers-reduced-motion (headless, VM, preview); `?motion=reduce`
@@ -120,11 +120,13 @@ function dustTexture() {
 }
 
 function buildProjectsHTML() {
+  // Projeto sem link publicado não ganha uma tela preta vazia: vira um card
+  // de texto com status, que fica honesto sem parecer quebrado.
   const cards = PROJECT_SCREENS.map((p) => `
-    <article class="project-card">
-      <div class="project-screen ${p.url ? "" : "placeholder"}">
-        ${p.url ? `<iframe src="${p.url}" loading="lazy" title="${p.title}"></iframe>` : "em breve"}
-      </div>
+    <article class="project-card${p.url ? "" : " is-wip"}">
+      ${p.url
+        ? `<div class="project-screen"><iframe src="${p.url}" loading="lazy" title="${p.title}"></iframe></div>`
+        : `<p class="project-status">em desenvolvimento</p>`}
       <h3>${p.title}</h3>
       <p>${p.description}</p>
       <ul class="stack-list">${p.stack.map((s) => `<li>${s}</li>`).join("")}</ul>

@@ -355,14 +355,16 @@ a { color: var(--warm); text-decoration: none; }
   position: relative;
 }
 .project-screen iframe { width: 100%; height: 100%; border: 0; }
-.project-screen.placeholder {
-  display: grid;
-  place-items: center;
-  color: var(--muted);
+/* projeto ainda sem link público: card de texto, sem moldura vazia */
+.project-card.is-wip { border-left: 1px solid var(--line); padding-left: 1.4rem; }
+.project-status {
+  margin: 0 0 0.9rem;
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.62rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
+  color: var(--warm);
+  opacity: 0.85;
 }
 .stack-list { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0; margin: 0.9rem 0 1rem; }
 .stack-list li {
