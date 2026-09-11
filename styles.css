@@ -377,9 +377,9 @@ a { color: var(--warm); text-decoration: none; }
 }
 .project-links a { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; }
 
+/* Reduced-motion corta o movimento ambiente (os loops infinitos), mas mantém
+   as transições curtas — zerar tudo fazia a interface parecer quebrada. */
 @media (prefers-reduced-motion: reduce) {
   html:not(.force-motion) .hero-scroll i,
   html:not(.force-motion) .door-hint span { animation: none; }
-  html:not(.force-motion) .loader { transition: none; }
-  html:not(.force-motion) * { transition-duration: 0.01ms !important; }
 }

@@ -46,14 +46,19 @@ function supportsWebGL() {
   }
 }
 
+// Em reduced-motion a intenção é *reduzir* movimento, não eliminar: sem isso
+// a porta pulava de fechada pra aberta e o site parecia quebrado. Os gestos
+// essenciais continuam, curtos e diretos; o que some é o movimento ambiente
+// (parallax, sway, poeira, scroll suave, viagens longas de câmera).
 function tween(target, vars) {
-  if (REDUCED) {
-    const { duration, ease, onComplete, delay, ...rest } = vars;
-    Object.assign(target, rest);
-    if (onComplete) onComplete();
-    return null;
-  }
-  return gsap.to(target, vars);
+  if (!REDUCED) return gsap.to(target, vars);
+  const { duration = 0.3, delay = 0, ease, ...rest } = vars;
+  return gsap.to(target, {
+    ...rest,
+    duration: Math.min(duration * 0.4, 0.45),
+    delay: Math.min(delay * 0.3, 0.1),
+    ease: "power2.out",
+  });
 }
 
 /* ---------------- helpers ---------------- */
@@ -693,10 +698,9 @@ function init() {
     const d = doors[active];
     // maçaneta gira primeiro, depois a folha abre
     d.levers.forEach((l) => {
-      if (REDUCED) { l.rotation.x = 0; return; }
       gsap.timeline()
-        .to(l.rotation, { x: -0.6, duration: 0.22, ease: "power2.out" })
-        .to(l.rotation, { x: 0, duration: 0.4, ease: "power2.inOut" }, 0.5);
+        .to(l.rotation, { x: -0.6, duration: REDUCED ? 0.12 : 0.22, ease: "power2.out" })
+        .to(l.rotation, { x: 0, duration: REDUCED ? 0.2 : 0.4, ease: "power2.inOut" }, REDUCED ? 0.2 : 0.5);
     });
     tween(d.pivot.rotation, { y: 1.42, duration: 1.25, ease: "power3.inOut", delay: 0.2 });
     tween(d.roomLight, { intensity: 30, duration: 1.3, ease: "power2.out", delay: 0.2 });
@@ -718,15 +722,17 @@ function init() {
     contentKicker.textContent = `${String(active + 1).padStart(2, "0")} — ${s.label}`;
     contentBody.innerHTML = s.id === "projetos" ? buildProjectsHTML() : s.html;
     overlay.hidden = false;
-    if (REDUCED) {
-      overlay.style.opacity = 1;
-      return;
-    }
-    gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power2.out" });
+    gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: REDUCED ? 0.25 : 0.6, ease: "power2.out" });
     gsap.fromTo(
       [contentKicker, ...contentBody.children],
-      { opacity: 0, y: 34 },
-      { opacity: 1, y: 0, duration: 0.75, stagger: 0.07, delay: 0.1, ease: "power3.out" }
+      { opacity: 0, y: REDUCED ? 0 : 34 },
+      {
+        opacity: 1, y: 0,
+        duration: REDUCED ? 0.3 : 0.75,
+        stagger: REDUCED ? 0.02 : 0.07,
+        delay: REDUCED ? 0.05 : 0.1,
+        ease: "power3.out",
+      }
     );
   }
 
@@ -738,8 +744,7 @@ function init() {
     mode = "closing";
     const d = doors[active];
     const finish = () => { overlay.hidden = true; };
-    if (REDUCED) finish();
-    else gsap.to(overlay, { opacity: 0, duration: 0.45, ease: "power2.in", onComplete: finish });
+    gsap.to(overlay, { opacity: 0, duration: REDUCED ? 0.2 : 0.45, ease: "power2.in", onComplete: finish });
 
     tween(d.pivot.rotation, { y: 0, duration: 1.1, ease: "power3.inOut", delay: 0.15 });
     tween(d.roomLight, { intensity: 0, duration: 1, delay: 0.15 });
