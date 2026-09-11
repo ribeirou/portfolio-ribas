@@ -17,6 +17,20 @@ Precisa de um servidor HTTP (os módulos ES e as texturas não carregam via
 npx serve .
 ```
 
+## Publicando mudanças
+
+```bash
+./publicar.sh "o que mudou"
+```
+
+O script troca a versão dos assets (`?v=...`), commita e dá push. Essa troca
+de versão é o que faz o navegador de quem já visitou baixar os arquivos novos
+em vez de servir os antigos do cache — publicar direto pelo `git push` deixa
+visitantes vendo a versão velha por um tempo.
+
+O site sai em https://ribeirou.github.io/portfolio-ribas/ cerca de um minuto
+depois do push.
+
 ## Estrutura
 
 | Arquivo | O que é |
