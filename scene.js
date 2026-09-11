@@ -5,7 +5,7 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { SECTIONS, PROJECT_SCREENS } from "./sections.js";
+import { SECTIONS, PROJECT_SCREENS } from "./sections.js?v=202609110141";
 
 // `?motion=full` força a experiência completa mesmo em ambientes que
 // reportam prefers-reduced-motion (headless, VM, preview); `?motion=reduce`
