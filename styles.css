@@ -93,10 +93,11 @@ a { color: var(--warm); text-decoration: none; }
 .logo {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.05rem;
-  letter-spacing: 0.16em;
+  font-size: clamp(0.68rem, 2.1vw, 1.05rem);
+  letter-spacing: clamp(0.05em, 0.5vw, 0.16em);
   color: var(--text);
   text-transform: uppercase;
+  white-space: nowrap;
 }
 .logo .dot { color: var(--warm); }
 .simple-link {
